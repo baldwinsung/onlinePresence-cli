@@ -1,4 +1,4 @@
-# onlinePresence
+# onlinePresence-cli
 
 Figure out the online presence for a company or academic institution. Starting point is usually their internet domain name.
 

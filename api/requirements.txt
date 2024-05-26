@@ -1,5 +1,0 @@
-dnspython==2.0.0
-Flask==3.0.3
-ipwhois==1.2.0
-pyOpenSSL==24.1.0
-python-whois==0.9.4

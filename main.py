@@ -74,9 +74,9 @@ def sslCertificate(dn):
     nb = datetime.strptime(x.get_notBefore().decode('ascii'), '%Y%m%d%H%M%SZ')
     na = datetime.strptime(x.get_notAfter().decode('ascii'), '%Y%m%d%H%M%SZ')
 
-    ir_str = "".join("/{:s}={:s}".format(name.decode(), value.decode()) \
+    ir_str = "".join("/{:s}={:s}".format(name.decode(), value.decode())
                      for name, value in ir.get_components())
-    cn_str = "".join("/{:s}={:s}".format(name.decode(), value.decode()) \
+    cn_str = "".join("/{:s}={:s}".format(name.decode(), value.decode())
                      for name, value in cn.get_components())
 
     print("\n")
@@ -93,13 +93,13 @@ def sslCertificate(dn):
         ge = x.get_extension(i)
         if 'subjectAltName' in str(ge.get_short_name()):
             s = ge.__str__()
-            l = s.split(',')
-            l.sort()
-            print("Total SANs:       ", len(l))
-            minusOne = (len(l) - 1)
+            s = s.split(',')
+            s.sort()
+            print("Total SANs:       ", len(s))
+            minusOne = (len(s) - 1)
             for i in range(0, minusOne):
-                print("                 ", l[i])
-            print("                  ", l[minusOne])
+                print("                 ", s[i])
+            print("                  ", s[minusOne])
 
 
 if len(sys.argv) > 1:
