@@ -11,22 +11,26 @@ from ipwhois import IPWhois
 
 
 def domainWhois(dn):
-    w = whois.whois(dn)
-    # print(w)
-    print("\n")
-    print("Domain Registration information")
-    print("-------------------------------")
-    print("Registrar:        ", w.registrar)
-    if type(w.creation_date) is list:
-        print("Created:          ", w.creation_date[0])
-    else:
-        print("Created:          ", w.creation_date)
+    try:
+        w = whois.whois(dn)
+        # print(w)
+        print("\n")
+        print("Domain Registration information")
+        print("-------------------------------")
+        print("Domain Name:      ", dn)
+        print("Registrar:        ", w.registrar)
+        if type(w.creation_date) is list:
+            print("Created:          ", w.creation_date[0])
+        else:
+            print("Created:          ", w.creation_date)
 
-    if type(w.expiration_date) is list:
-        print("Expires:          ", w.expiration_date[0])
-    else:
-        print("Expires:          ", w.expiration_date)
-
+        if type(w.expiration_date) is list:
+            print("Expires:          ", w.expiration_date[0])
+        else:
+            print("Expires:          ", w.expiration_date)
+    except:
+        print("\n" + domain_name + " does not exist. perhaps this domain is not registered.")
+        sys.exit(1)
 
 def checkApex(dn):
     try:
@@ -53,6 +57,25 @@ def hostingProvider(dn):
                 hosting_provider = p['objects'][x]['contact']['name']
                 print("Hosting Provider: ", hosting_provider)
                 break
+
+def mailExchanger(dn):
+    try:
+        result = dns.resolver.resolve(dn, 'MX')
+        list_exchange = []
+        for rdata in result:
+            list_exchange.append(rdata.exchange)
+
+        print("\n")
+        print("Mail Exchanger information")
+        print("--------------------------")
+        print("Domain Name:      ", dn)
+        print("Total MX:         ", len(list_exchange))
+        for i, exchange in enumerate(list_exchange):
+            print("                  ", exchange)
+
+    except:
+        print("\nMX error")
+        sys.exit(1)
 
 
 def checkSslCertificate(dn):
@@ -118,6 +141,7 @@ if len(sys.argv) > 1:
     hostingProvider(domain_name)
     checkSslCertificate(domain_name)
     sslCertificate(domain_name)
+    mailExchanger(domain_name)
 
 else:
     print("\nPlease add the domain_name you want to query")
