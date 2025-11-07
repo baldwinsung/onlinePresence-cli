@@ -77,6 +77,24 @@ def mailExchanger(dn):
         print("\nMX error")
         sys.exit(1)
 
+def nameServer(dn):
+    try:
+        result = dns.resolver.resolve(dn, 'NS')
+        list_ns = []
+        for rdata in result:
+            list_ns.append(rdata)
+
+        print("\n")
+        print("Name Server information")
+        print("------------------------")
+        print("Domain Name:      ", dn)
+        print("Total NS:         ", len(list_ns))
+        for i, rdata in enumerate(list_ns):
+            print("                  ", rdata)
+
+    except:
+        print("\nNS error")
+        sys.exit(1)
 
 def checkSslCertificate(dn):
     try:
@@ -142,6 +160,7 @@ if len(sys.argv) > 1:
     checkSslCertificate(domain_name)
     sslCertificate(domain_name)
     mailExchanger(domain_name)
+    nameServer(domain_name)
 
 else:
     print("\nPlease add the domain_name you want to query")
