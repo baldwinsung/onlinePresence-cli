@@ -1,31 +1,36 @@
 # onlinePresence-cli
 
-Figure out the online presence for a company or academic institution. Starting point is usually their internet domain name.
-
-Displays general information about the domain and SSL certificate.
-
-Pay close attention to the expiration dates for both the domain and SSL certificates.
+CLI tool to report the full online presence of a domain — WHOIS registration, hosting provider, SSL certificate, MX records, and name servers.
 
 ## Getting Started
-Install the dependencies. Use a virtual environment.
 
-```
+```bash
 mkvirtualenv onlinePresence
 pip install -r requirements.txt
+chmod +x main.py
 ```
 
-Test the code with google.
+## Usage
+
+```bash
+./main.py <domain>
 ```
+
+Example:
+```bash
 ./main.py google.com
 ```
 
-Output should be similar to...
+## Example Output
+
 ```
 Domain Registration information
 -------------------------------
+Domain Name:       google.com
 Registrar:         MarkMonitor, Inc.
 Created:           1997-09-15 07:00:00+00:00
 Expires:           2028-09-13 07:00:00+00:00
+
 A aka APEX Record: 142.251.40.238
 Hosting Provider:  Google LLC
 
@@ -33,16 +38,32 @@ Hosting Provider:  Google LLC
 SSL Certificate information
 ---------------------------
 Domain Name:       google.com
+Subject:           CN=*.google.com
+Issuer:            O=Google Trust Services LLC
 Not Before:        2023-12-11 08:03:31
 Not After:         2024-03-04 08:03:30
-Total SANs      :  136
+Total SANs:        136
                    DNS:*.2mdn-cn.net
                    DNS:*.admob-cn.com
-                   DNS:*.ampproject.net.cn
-                   DNS:*.ampproject.org.cn
-                   DNS:*.android.com
+                   ...
+
+
+Mail Exchanger information
+--------------------------
+Domain Name:       google.com
+Total MX:          5
+                   alt1.aspmx.l.google.com.
+                   ...
+
+
+Name Server information
+------------------------
+Domain Name:       google.com
+Total NS:          4
+                   ns1.google.com.
+                   ...
 ```
 
-# Credits
+## Credits
 
-Richard Penman ( https://github.com/richardpenman ) for python-whois
+[Richard Penman](https://github.com/richardpenman) for python-whois
