@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from datetime import datetime
-# import pprint
+import argparse
 import ssl
 import sys
 import dns.resolver
@@ -13,112 +13,96 @@ from ipwhois import IPWhois
 def domainWhois(dn):
     try:
         w = whois.whois(dn)
-        # print(w)
         print("\n")
         print("Domain Registration information")
         print("-------------------------------")
         print("Domain Name:      ", dn)
         print("Registrar:        ", w.registrar)
-        if type(w.creation_date) is list:
-            print("Created:          ", w.creation_date[0])
-        else:
-            print("Created:          ", w.creation_date)
-
-        if type(w.expiration_date) is list:
-            print("Expires:          ", w.expiration_date[0])
-        else:
-            print("Expires:          ", w.expiration_date)
-    except:
-        print("\n" + domain_name + " does not exist. perhaps this domain is not registered.")
+        print("Created:          ", w.creation_date[0] if isinstance(w.creation_date, list) else w.creation_date)
+        print("Expires:          ", w.expiration_date[0] if isinstance(w.expiration_date, list) else w.expiration_date)
+    except Exception:
+        print(f"\n{dn} does not exist or WHOIS lookup failed.")
         sys.exit(1)
 
-def checkApex(dn):
+
+def resolveApex(dn):
+    """Resolve the first A record for dn, or exit on failure."""
     try:
         result = dns.resolver.resolve(dn, 'A')
-    except:
-        print("\nA record aka APEX record for " + domain_name + " does not exist")
+        ips = [r.to_text() for r in result]
+    except Exception:
+        print(f"\nA record (APEX) for {dn} does not exist")
         sys.exit(1)
+    if not ips:
+        print(f"\nA record (APEX) for {dn} does not exist")
+        sys.exit(1)
+    return ips[0]
 
 
-def hostingProvider(dn):
-    result = dns.resolver.resolve(dn, 'A')
-    for ipval in result:
-        # print('IP', ipval.to_text())
-        ip_apex = ipval.to_text()
-
-    if ip_apex:
-        print("A aka APEX Record:", ip_apex)
+def hostingProvider(dn, ip_apex):
+    print("A aka APEX Record:", ip_apex)
+    try:
         lookup = IPWhois(ip_apex)
         p = lookup.lookup_rdap()
-        # pprint.pprint(p)
-        # print(p['network']['name'])
-        if p['objects'] is not None:
+        if p['objects']:
             for x in p['objects']:
-                hosting_provider = p['objects'][x]['contact']['name']
-                print("Hosting Provider: ", hosting_provider)
+                name = p['objects'][x]['contact']['name']
+                print("Hosting Provider: ", name)
                 break
+    except Exception:
+        print("Hosting Provider:  (lookup failed)")
+
 
 def mailExchanger(dn):
     try:
         result = dns.resolver.resolve(dn, 'MX')
-        list_exchange = []
-        for rdata in result:
-            list_exchange.append(rdata.exchange)
-
+        exchanges = [rdata.exchange for rdata in result]
         print("\n")
         print("Mail Exchanger information")
         print("--------------------------")
         print("Domain Name:      ", dn)
-        print("Total MX:         ", len(list_exchange))
-        for i, exchange in enumerate(list_exchange):
+        print("Total MX:         ", len(exchanges))
+        for exchange in exchanges:
             print("                  ", exchange)
-
-    except:
-        print("\nMX error")
+    except Exception:
+        print("\nMX lookup failed")
         sys.exit(1)
+
 
 def nameServer(dn):
     try:
         result = dns.resolver.resolve(dn, 'NS')
-        list_ns = []
-        for rdata in result:
-            list_ns.append(rdata)
-
+        servers = list(result)
         print("\n")
         print("Name Server information")
         print("------------------------")
         print("Domain Name:      ", dn)
-        print("Total NS:         ", len(list_ns))
-        for i, rdata in enumerate(list_ns):
+        print("Total NS:         ", len(servers))
+        for rdata in servers:
             print("                  ", rdata)
-
-    except:
-        print("\nNS error")
-        sys.exit(1)
-
-def checkSslCertificate(dn):
-    try:
-        c = ssl.get_server_certificate((dn, 443), timeout=5)
-    except:
-        print("\nSSL certificate for " + domain_name + " timed out")
-        print("Try this from the shell...")
-        print("echo | openssl s_client -showcerts -connect " + dn + ":443 2>/dev/null | \\")
-        print("openssl x509 -inform pem -noout -dates -ext subjectAltName")
+    except Exception:
+        print("\nNS lookup failed")
         sys.exit(1)
 
 
 def sslCertificate(dn):
-    c = ssl.get_server_certificate((dn, 443), timeout=5)
+    try:
+        c = ssl.get_server_certificate((dn, 443), timeout=5)
+    except Exception:
+        print(f"\nSSL certificate for {dn} timed out")
+        print("Try this from the shell...")
+        print(f"echo | openssl s_client -showcerts -connect {dn}:443 2>/dev/null | \\")
+        print("openssl x509 -inform pem -noout -dates -ext subjectAltName")
+        sys.exit(1)
+
     x = OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_PEM, c)
     ir = x.get_issuer()
     cn = x.get_subject()
     nb = datetime.strptime(x.get_notBefore().decode('ascii'), '%Y%m%d%H%M%SZ')
     na = datetime.strptime(x.get_notAfter().decode('ascii'), '%Y%m%d%H%M%SZ')
 
-    ir_str = "".join("/{:s}={:s}".format(name.decode(), value.decode())
-                     for name, value in ir.get_components())
-    cn_str = "".join("/{:s}={:s}".format(name.decode(), value.decode())
-                     for name, value in cn.get_components())
+    ir_str = "".join(f"/{name.decode()}={value.decode()}" for name, value in ir.get_components())
+    cn_str = "".join(f"/{name.decode()}={value.decode()}" for name, value in cn.get_components())
 
     print("\n")
     print("SSL Certificate information")
@@ -130,38 +114,28 @@ def sslCertificate(dn):
     print("Not After:        ", na)
 
     ec = x.get_extension_count()
-    for i in range(0, ec):
+    for i in range(ec):
         ge = x.get_extension(i)
         if 'subjectAltName' in str(ge.get_short_name()):
-            s = ge.__str__()
-            s = s.split(',')
-            s.sort()
+            s = sorted(ge.__str__().split(','))
             print("Total SANs:       ", len(s))
-            minusOne = (len(s) - 1)
-            for i in range(0, minusOne):
-                print("                 ", s[i])
-            print("                  ", s[minusOne])
+            for entry in s:
+                print("                 ", entry)
 
 
-if len(sys.argv) > 1:
-    domain_name = sys.argv[1]
+def main():
+    parser = argparse.ArgumentParser(description="Report online presence of a domain.")
+    parser.add_argument("domain", help="Domain name to query (e.g. google.com)")
+    args = parser.parse_args()
+    dn = args.domain
 
-    # check if edu
-    # tld = domain_name.split('.')
-    # if tld[1] == 'edu':
-    #    print("\ncannot lookup edu domains. educause is not in python-whois")
-    #    print("\nJust checking SSL certificate...")
-    #    sslCertificate(domain_name)
-    #    sys.exit(1)
+    domainWhois(dn)
+    ip = resolveApex(dn)
+    hostingProvider(dn, ip)
+    sslCertificate(dn)
+    mailExchanger(dn)
+    nameServer(dn)
 
-    domainWhois(domain_name)
-    checkApex(domain_name)
-    hostingProvider(domain_name)
-    checkSslCertificate(domain_name)
-    sslCertificate(domain_name)
-    mailExchanger(domain_name)
-    nameServer(domain_name)
 
-else:
-    print("\nPlease add the domain_name you want to query")
-    print("For example: " + sys.argv[0] + " google.com\n")
+if __name__ == '__main__':
+    main()
