@@ -1,4 +1,4 @@
 dnspython==2.8.0
 ipwhois==1.2.0
 pyOpenSSL==26.4.0
-python-whois==0.9.4
+python-whois==0.9.6
