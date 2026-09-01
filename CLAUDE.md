@@ -5,6 +5,7 @@ Python CLI that prints a full online presence report for a domain: WHOIS registr
 ## Commands
 
 ### Setup
+Requires Python 3.10+ (CI matrix in `.github/workflows/python-package.yml` covers 3.10–3.11; `requirements.txt` holds only pip package pins, never CI config).
 ```bash
 mkvirtualenv onlinePresence
 pip install -r requirements.txt

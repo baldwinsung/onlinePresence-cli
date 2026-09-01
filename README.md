@@ -4,6 +4,8 @@ CLI tool to report the full online presence of a domain — WHOIS registration, 
 
 ## Getting Started
 
+Requires Python 3.10+.
+
 ```bash
 mkvirtualenv onlinePresence
 pip install -r requirements.txt
